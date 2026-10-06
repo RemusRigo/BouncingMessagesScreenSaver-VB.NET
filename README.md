@@ -30,7 +30,6 @@ The release contains following Frameworks:
 
 |Target Framework|Supported Architectures|Required Runtime|
 |-|-|-|
-|**.NET Framework 4.8**|x86, x64|[.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/download/dotnet-framework/net48)|
 |**.NET 8.0**|x86, x64|[.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) *(or Desktop Runtime for UI apps)*|
 |**.NET 10.0**|x86, x64|[.NET 10.0 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) *(or Desktop Runtime for UI apps)*|
 

@@ -32,11 +32,12 @@ Partial Class frmCfg
       ' 
       ' btnOk
       ' 
-      btnOk.Image = CType(resources.GetObject("btnOk.Image"), Image)
-      btnOk.Location = New Point(762, 412)
+      btnOk.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+      btnOk.Location = New Point(763, 424)
       btnOk.Name = "btnOk"
-      btnOk.Size = New Size(35, 35)
+      btnOk.Size = New Size(35, 23)
       btnOk.TabIndex = 0
+      btnOk.Text = "Ok"
       btnOk.UseVisualStyleBackColor = True
       ' 
       ' chkBoxRandomMessages
@@ -51,6 +52,7 @@ Partial Class frmCfg
       ' 
       ' txtBoxMessagePath
       ' 
+      txtBoxMessagePath.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
       txtBoxMessagePath.Location = New Point(12, 425)
       txtBoxMessagePath.Name = "txtBoxMessagePath"
       txtBoxMessagePath.Size = New Size(649, 23)
@@ -58,15 +60,17 @@ Partial Class frmCfg
       ' 
       ' btnBrowse
       ' 
-      btnBrowse.Image = CType(resources.GetObject("btnBrowse.Image"), Image)
-      btnBrowse.Location = New Point(667, 412)
+      btnBrowse.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+      btnBrowse.Location = New Point(667, 424)
       btnBrowse.Name = "btnBrowse"
-      btnBrowse.Size = New Size(35, 35)
+      btnBrowse.Size = New Size(60, 23)
       btnBrowse.TabIndex = 4
+      btnBrowse.Text = "Browse"
       btnBrowse.UseVisualStyleBackColor = True
       ' 
       ' lstBoxMessages
       ' 
+      lstBoxMessages.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left
       lstBoxMessages.FormattingEnabled = True
       lstBoxMessages.Location = New Point(12, 28)
       lstBoxMessages.Name = "lstBoxMessages"
@@ -83,8 +87,9 @@ Partial Class frmCfg
       Controls.Add(txtBoxMessagePath)
       Controls.Add(chkBoxRandomMessages)
       Controls.Add(btnOk)
+      Icon = CType(resources.GetObject("$this.Icon"), Icon)
       Name = "frmCfg"
-      Text = "frmCfg"
+      Text = "Config"
       ResumeLayout(False)
       PerformLayout()
    End Sub

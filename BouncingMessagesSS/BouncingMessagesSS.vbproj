@@ -6,10 +6,11 @@
       <MyType>WindowsFormsWithCustomSubMain</MyType>
       <OutputType>WinExe</OutputType>
       <StartupObject>Sub Main</StartupObject>
-      <TargetFramework>net10.0-windows</TargetFramework>
-      <!-- <TargetFrameworks>net48;net8.0-windows;net10.0-windows</TargetFrameworks> -->
+      <!-- <TargetFramework>net10.0-windows</TargetFramework> -->
+      <TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>
       <UseWindowsForms>true</UseWindowsForms>
       <Platforms>x64;x86</Platforms>
+      <ApplicationIcon>Res\Main.ico</ApplicationIcon>
    </PropertyGroup>
 
    <PropertyGroup Condition="'$(TargetFramework)' != ''">
@@ -20,7 +21,11 @@
 
    <PropertyGroup Condition="'$(Platform)' == 'x86' Or '$(Platform)' == 'x64'">
       <PlatformTarget>$(Platform)</PlatformTarget>
-   </PropertyGroup>   
+   </PropertyGroup>
+
+   <ItemGroup>
+     <Content Include="Res\Main.ico" />
+   </ItemGroup>   
 
   <ItemGroup>
     <Import Include="System.Data" />
@@ -54,6 +59,10 @@
       <Generator>MyApplicationCodeGenerator</Generator>
       <LastGenOutput>Application.Designer.vb</LastGenOutput>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="API\" />
   </ItemGroup>
 
    <Target Name="RenameToScr" AfterTargets="Build">

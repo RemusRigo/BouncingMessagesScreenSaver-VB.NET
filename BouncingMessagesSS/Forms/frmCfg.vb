@@ -1,6 +1,34 @@
-﻿Imports Microsoft.Win32
+﻿'--------------------------------------------------------------------------------------------------
+' BouncingMessagesSS: frmCfg.vb: Configuration form
+'    © 2026 Remus Rigo
+'       v1.1.20261006
+'--------------------------------------------------------------------------------------------------
+
+Imports Microsoft.Win32
 Imports System.IO
+Imports BouncingMessagesSS.API
+
 Public Class frmCfg
+
+   Private Const SYSMENU_ABOUT_ID As UInteger = 1000
+
+   Protected Overrides Sub OnHandleCreated(e As EventArgs)
+      MyBase.OnHandleCreated(e)
+      Dim hSysMenu As IntPtr = GetSystemMenu(Me.Handle, False)
+      ' Add a separator and then your custom item
+      AppendMenu(hSysMenu, MF_SEPARATOR, 0, String.Empty)
+      AppendMenu(hSysMenu, MF_STRING, SYSMENU_ABOUT_ID, "About...")
+   End Sub
+
+   Protected Overrides Sub WndProc(ByRef m As Message)
+      MyBase.WndProc(m)
+      If m.Msg = WM_SYSCOMMAND Then
+         If CUInt(m.WParam) = SYSMENU_ABOUT_ID Then
+            frmAbout.ShowDialog()
+         End If
+      End If
+   End Sub
+
 
    Private Sub ScanMessages(msgPath As String)
 

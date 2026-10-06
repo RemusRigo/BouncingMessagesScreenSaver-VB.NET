@@ -1,12 +1,18 @@
-﻿Imports Microsoft.Win32
+﻿'--------------------------------------------------------------------------------------------------
+' BouncingMessagesSS: frmSS.vb: Main screen saver form
+'    © 2026 Remus Rigo
+'       v1.1.20261006
+'--------------------------------------------------------------------------------------------------
+
+Imports Microsoft.Win32
 Imports System.IO
+
+Imports BouncingMessagesSS.API
 
 Public Class frmSS
 
    ' Message
-   'Private msg As String = "Hello, Remus!"
    Private msgColor As Color = Color.Lime
-   'Private msgFont As Font
    Private titleFont As Font
    Private descFont As Font
    Private msgSize As SizeF
@@ -16,28 +22,68 @@ Public Class frmSS
    Private bounceCount As Integer = 0
    Private Const BouncesPerMessage As Integer = 4   ' change message every 4 wall hits
 
-   Private hitWall As Boolean = False
-
    Private rnd As New Random()
    Private rndColor As Boolean = False
 
    ' Locations
-   Private x As Single = 50
-   Private y As Single = 50
-   Private dx As Single = 4      ' horizontal speed (pixels per tick)
-   Private dy As Single = 3      ' vertical speed
-   Private mousePos As Point = Point.Empty
+   Private x As Single = 50   ' current position of the message block (horizontal)
+   Private y As Single = 50   ' current position of the message block (vertical)
+   Private dx As Single = 4   ' horizontal speed (pixels per tick)
+   Private dy As Single = 3   ' vertical speed (pixels per tick)
+   Private mousePos As Point = Point.Empty        ' Mouse position when the form was first shown
+   Private hitWall As Boolean = False             ' True if the message block hit a wall
+   Private screenRects As New List(Of RectangleF) ' Monitor areas in client coordinates (the form covers the whole virtual desktop)
 
-   ' Monitor areas in client coordinates (the form covers the whole virtual desktop)
-   Private screenRects As New List(Of RectangleF)
+   ' Preview (/p): the form lives inside the small monitor of the Screen Saver Settings dialog
+   Private previewParent As IntPtr = IntPtr.Zero
 
-   Private ReadOnly Property MaxTextWidth As Integer
+   Private ReadOnly Property IsPreview As Boolean
       Get
-         ' wrap text at half the width of the narrowest monitor, so it fits on every screen
-         Return CInt(screenRects.Min(Function(r) r.Width) * 0.5)
+         Return previewParent <> IntPtr.Zero
       End Get
    End Property
 
+   ' The maximum width of the message block, based on the smallest monitor size
+   Private ReadOnly Property MaxTextWidth As Integer
+      Get
+         Return CInt(screenRects.Min(Function(r) r.Width) * If(IsPreview, 0.9, 0.5))
+      End Get
+   End Property
+
+   '-----------------------------------------------------------------------------------------------
+   ' Full screen saver (/s)
+   Public Sub New()
+      InitializeComponent()
+   End Sub
+
+   ' Preview (/p <hwnd>): runs as a child window of parentHandle
+   Public Sub New(parentHandle As IntPtr)
+      InitializeComponent()
+      previewParent = parentHandle
+      Me.TopMost = False
+      Me.WindowState = FormWindowState.Normal
+   End Sub
+
+   ' Moves the form into the preview window and uses that as the only "screen"
+   Private Sub FitPreview()
+      SetParent(Me.Handle, previewParent)
+      SetWindowLong(Me.Handle, GWL_STYLE, GetWindowLong(Me.Handle, GWL_STYLE) Or WS_CHILD)
+
+      Dim rc As RECT
+      GetClientRect(previewParent, rc)
+      Me.Location = Point.Empty
+      Me.Size = New Size(rc.Right - rc.Left, rc.Bottom - rc.Top)
+
+      screenRects.Clear()
+      screenRects.Add(New RectangleF(0, 0, Me.Width, Me.Height))
+      x = 2
+      y = 2
+      dx = 1
+      dy = 1
+   End Sub
+
+   '-----------------------------------------------------------------------------------------------
+   ' 
    Private Sub CoverAllScreens()
       Dim virt As Rectangle = SystemInformation.VirtualScreen
       Me.WindowState = FormWindowState.Normal
@@ -96,6 +142,8 @@ Public Class frmSS
       Return jsonFiles(rnd.Next(0, jsonFiles.Length))
    End Function
 
+   '-----------------------------------------------------------------------------------------------
+   ' Loads messages from a JSON file, or if that fails, reads it line by line (lenient mode)
    Private Sub LoadMessages(msgFile As String)
       If IO.File.Exists(msgFile) Then
          Dim text As String = IO.File.ReadAllText(msgFile)
@@ -109,7 +157,7 @@ Public Class frmSS
          Catch ex As Exception
             ' not strict JSON (e.g. "Ctrl+"+"": "Insert options"): read it line by line
             messages.Clear()
-            LoadMessagesLenient(text)
+            LoadMessagesLenient(text) ' re-read the whole data in lenient mode
          End Try
       End If
 
@@ -139,17 +187,24 @@ Public Class frmSS
       Next
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Unescapes a string that was read from a JSON file, so that \" becomes " and \\ becomes \
    Private Shared Function Unescape(s As String) As String
       Return s.Replace("\\", ChrW(0)).Replace("\""", """").Replace(ChrW(0), "\")
    End Function
 
+   '-----------------------------------------------------------------------------------------------
+   ' Adds a message to the list, if the title is not empty
    Private Sub AddMessage(title As String, description As String)
       If String.IsNullOrWhiteSpace(title) Then Return
       messages.Add(New MessageItem With {
          .Title = title,
-         .Description = If(description, "")})
+         .Description = If(description, "")
+      })
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Measures every message once so Paint doesn't have to
    Private Sub LayoutMessages()
       ' Measure every message once so Paint doesn't have to
       Using g As Graphics = Me.CreateGraphics()
@@ -163,6 +218,9 @@ Public Class frmSS
       End Using
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Sets the current message to the one at the given index, and adjusts the position if
+   ' the new message is bigger and would go off-screen
    Private Sub SetMessage(index As Integer)
       currentIndex = index
       current = messages(index)
@@ -178,10 +236,14 @@ Public Class frmSS
       End If
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Sets msgColor to a random color with RGB values between 80 and 255 (so it's not too dark)
    Private Sub RandomColor()
       msgColor = Color.FromArgb(rnd.Next(80, 256), rnd.Next(80, 256), rnd.Next(80, 256))
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Changes to the next message after a certain number of bounces
    Private Sub NextMessage()
       bounceCount += 1
       If bounceCount >= BouncesPerMessage Then
@@ -190,6 +252,8 @@ Public Class frmSS
       End If
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Draws the message block at the given position with the given color
    Private Sub DrawBlock(g As Graphics, item As MessageItem, px As Single, py As Single, c As Color)
       Using br As New SolidBrush(c)
          g.DrawString(item.Title, titleFont, br,
@@ -199,20 +263,30 @@ Public Class frmSS
       End Using
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' frmSS: OnLoad
    Private Sub frmSS_Load(sender As Object, e As EventArgs) Handles MyBase.Load
       Me.KeyPreview = True
-      CoverAllScreens()
-      titleFont = New Font("Segoe UI", 16, FontStyle.Bold)
-      descFont = New Font("Segoe UI", 12)
+      If IsPreview Then
+         FitPreview()
+         titleFont = New Font("Segoe UI", 7, FontStyle.Bold)
+         descFont = New Font("Segoe UI", 6)
+      Else
+         CoverAllScreens()
+         titleFont = New Font("Segoe UI", 16, FontStyle.Bold)
+         descFont = New Font("Segoe UI", 12)
+      End If
       LoadSettings()
       LayoutMessages()
       SetMessage(0)
-      Cursor.Hide()
+      If Not IsPreview Then Cursor.Hide()
       tmrMove.Interval = 30
       tmrMove.Enabled = True
       rndColor = True
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' frmSS: OnPaint
    Private Sub frmSS_Paint(sender As Object, e As PaintEventArgs) Handles MyBase.Paint
       If current Is Nothing Then Return
       ' ClearType doesn't blend well with transparency, so use plain antialiasing
@@ -221,15 +295,24 @@ Public Class frmSS
       DrawBlock(e.Graphics, current, x, y, msgColor)
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' frmSS: OnClose
    Private Sub frmSS_KeyDown(sender As Object, e As KeyEventArgs) Handles MyBase.KeyDown
+      If IsPreview Then Return
       Me.Close()
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' frmSS: OnMouseDown
    Private Sub frmSS_MouseDown(sender As Object, e As MouseEventArgs) Handles MyBase.MouseDown
+      If IsPreview Then Return
       Me.Close()
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' frmSS: OnMouseMove
    Private Sub frmSS_MouseMove(sender As Object, e As MouseEventArgs) Handles MyBase.MouseMove
+      If IsPreview Then Return
       ' remember the first position
       If mousePos = Point.Empty Then
          mousePos = e.Location
@@ -242,7 +325,15 @@ Public Class frmSS
       End If
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' frmSS: OnTimer
    Private Sub tmrMove_Tick(sender As Object, e As EventArgs) Handles tmrMove.Tick
+      ' the Settings dialog closed or switched to another screen saver: the preview window is gone
+      If IsPreview AndAlso Not IsWindow(previewParent) Then
+         Application.Exit()
+         Return
+      End If
+
       ' Move the message one axis at a time; if the step would leave the visible
       ' monitor area (outer edges, or the step between monitors of different
       ' height), bounce instead of moving
