@@ -31,7 +31,7 @@ See the [User's Guide](UsersGuide.md) for downloads, runtimes, installation and 
 ## Statistics
 
 ![VB.NET](https://img.shields.io/badge/Language-VB.NET-blue)
-![VS](https://img.shields.io/badge/IDE-Visual%20Studio-5C2D91)
+![VS](https://img.shields.io/badge/IDE-Visual%20Studio-purple)
 ![JSON](https://img.shields.io/badge/File-JSON-yellow)
 <br>
 ![status](https://img.shields.io/badge/status-completed-brightgreen) 
