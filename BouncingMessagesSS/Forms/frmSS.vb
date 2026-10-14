@@ -296,9 +296,14 @@ Public Class frmSS
    End Sub
 
    '-----------------------------------------------------------------------------------------------
-   ' frmSS: OnClose
+   ' frmSS: OnKeyDown: Space toggles movement, any other key closes the screen saver
    Private Sub frmSS_KeyDown(sender As Object, e As KeyEventArgs) Handles MyBase.KeyDown
       If IsPreview Then Return
+      If e.KeyCode = Keys.Space Then
+         tmrMove.Enabled = Not tmrMove.Enabled
+         e.Handled = True
+         Return
+      End If
       Me.Close()
    End Sub
 
